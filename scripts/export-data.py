@@ -1,5 +1,5 @@
 """Export public procurement fields from existing daily Markdown reports (read only)."""
-import argparse, datetime as dt, hashlib, json, re
+import argparse, datetime as dt, hashlib, json, re, unicodedata
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
@@ -109,6 +109,78 @@ def infer_province(title: str, customer: str, current: str) -> str:
             return province
     return current or UNKNOWN
 
+
+PROJECT_ID_PATTERNS = (
+    re.compile(r'(?i)(?<![A-Za-z0-9])([A-Z]{1,8}[-_][A-Z0-9]+(?:[-_][A-Z0-9]+)+)(?![A-Za-z0-9])'),
+    re.compile(r'(?i)(?<![A-Za-z0-9])([A-Z]{1,5}\d{6,}[A-Z0-9-]*)(?![A-Za-z0-9])'),
+    re.compile(r'(?<!\d)(20\d{2}\d{4,})(?!\d)'),
+)
+PROJECT_SUFFIX_RE = re.compile(
+    r'(采购需求征集意见|需求公示(?:（征询意见）)?|采购意向|采购更正|更正|变更|'
+    r'公开招标|竞争性磋商|竞争性谈判|询价|招标|采购)公告(?:（第[一二三四五六七八九十0-9]+次）)?$'
+)
+
+
+def canonical_project_text(value: str) -> str:
+    text = unicodedata.normalize('NFKC', value or '').lower()
+    text = PROJECT_SUFFIX_RE.sub('', text)
+    text = re.sub(r'（?第[一二三四五六七八九十0-9]+次）?', '', text)
+    return re.sub(r'[^0-9a-z\u4e00-\u9fff]+', '', text)
+
+
+def project_identity(record: dict) -> tuple:
+    # Corrections carry operationally important changes (deadline, documents,
+    # requirements).  Keep each correction as its own visible record even
+    # when it references the same project as the original announcement.
+    if record.get('type') == '更正公告' or re.search(r'更正|变更', str(record.get('title') or '')):
+        return ('correction', record.get('url', ''))
+    haystack = ' '.join(str(record.get(key) or '') for key in ('title', 'projectName', 'summary'))
+    for pattern in PROJECT_ID_PATTERNS:
+        match = pattern.search(haystack)
+        if match:
+            return ('id', match.group(1).lower())
+    title = canonical_project_text(record.get('projectName') or record.get('title'))
+    customer = canonical_project_text(record.get('customer'))
+    # Generic/very short titles are not safe project identities without an ID.
+    if len(title) < 10:
+        return ('url', record.get('url', ''))
+    return ('title', customer, title)
+
+
+def known(value) -> bool:
+    return value not in (None, '', UNKNOWN, '采购人未识别', '暂无可用摘要，请查看公告原文。')
+
+
+def record_quality(record: dict) -> tuple:
+    fields = ('province', 'customer', 'method', 'budgetYuan', 'publishedDate', 'acquisitionTime', 'deadlineDate', 'documents')
+    score = sum(1 for field in fields if known(record.get(field)) and (field != 'documents' or record.get(field)))
+    if '历史摘要包含无效页面内容' not in str(record.get('summary') or ''):
+        score += 1
+    return (score, record.get('publishedDate') or '', record.get('lastSeen') or '')
+
+
+def deduplicate_records(records: list[dict]) -> list[dict]:
+    groups: dict[tuple, list[dict]] = {}
+    for record in records:
+        groups.setdefault(project_identity(record), []).append(record)
+    merged: list[dict] = []
+    for group in groups.values():
+        ordered = sorted(group, key=record_quality, reverse=True)
+        chosen = dict(ordered[0])  # one type is intentionally retained
+        for candidate in ordered[1:]:
+            for field in ('province', 'customer', 'methodRaw', 'method', 'budgetRaw', 'budgetYuan',
+                          'publishedRaw', 'publishedDate', 'acquisitionTime', 'deadlineRaw', 'deadlineDate',
+                          'source', 'summary', 'relevance', 'verification'):
+                if not known(chosen.get(field)) and known(candidate.get(field)):
+                    chosen[field] = candidate[field]
+            docs = {tuple(item.items()) for item in (chosen.get('documents') or [])}
+            docs.update(tuple(item.items()) for item in (candidate.get('documents') or []))
+            chosen['documents'] = [dict(item) for item in docs]
+            chosen['firstSeen'] = min(chosen.get('firstSeen') or '9999-99-99', candidate.get('firstSeen') or '9999-99-99')
+            chosen['lastSeen'] = max(chosen.get('lastSeen') or '', candidate.get('lastSeen') or '')
+        merged.append(chosen)
+    return sorted(merged, key=lambda x: (x.get('publishedDate') or '', x.get('lastSeen') or ''), reverse=True)
+
 def export(source, destination):
     records, rejected, reports = {}, [], []
     for file in sorted(source.glob('*_档案项目采购公告日报.md')):
@@ -167,7 +239,7 @@ def export(source, destination):
                 'lastSeen': report_date,
             }
             records[url] = record
-    items = sorted(records.values(), key=lambda x: (x['publishedDate'] or '', x['lastSeen']), reverse=True)
+    items = deduplicate_records(list(records.values()))
     dataset = {'schemaVersion': 1, 'exportedAt': dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).isoformat(timespec='seconds'),
         'latestReportAt': max((r['generatedAt'] for r in reports), default=None),
         'reportCount': len(reports), 'noticeCount': len(items), 'records': items}
