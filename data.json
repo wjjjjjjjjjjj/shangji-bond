@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "exportedAt": "2026-09-12T17:05:21+08:00",
-  "latestReportAt": "2026-09-12 17:01",
-  "reportCount": 18,
+  "exportedAt": "2026-09-13T17:53:46+08:00",
+  "latestReportAt": "2026-09-13 17:49",
+  "reportCount": 19,
   "noticeCount": 44,
   "records": [
     {
@@ -29,7 +29,7 @@
       "relevance": "高相关",
       "verification": "日报收录",
       "firstSeen": "2026-09-12",
-      "lastSeen": "2026-09-12"
+      "lastSeen": "2026-09-13"
     },
     {
       "id": "05953fb4b65f6423",
