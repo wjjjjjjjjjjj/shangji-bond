@@ -16,7 +16,7 @@ function selectedRecords(){
     if(province && r.province!==province)return false;
     if(method && r.method!==method)return false;
     if($('high').checked && r.relevance!=='高相关')return false;
-    if(r.publishedDate==='2026-10-09')return false;
+    if(r.publishedDate && r.publishedDate>today())return false;
     if((r.deadlineDate && r.deadlineDate<today()) || (r.autoClearDate && r.autoClearDate<today()))return false;
     if(period && (!r.publishedDate || daysBetween(today(),r.publishedDate)<0 || daysBetween(today(),r.publishedDate)>=period))return false;
     const n=r.budgetYuan;
