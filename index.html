@@ -17,8 +17,8 @@
         <label for="method">采购方式</label><select id="method"><option value="">全部方式</option></select>
         <label for="budget">预算金额</label><select id="budget"><option value="">全部金额</option><option value="under50">50 万元以下</option><option value="50to100">50–100 万元</option><option value="100to500">100–500 万元</option><option value="over500">500 万元及以上</option><option value="unknown">金额未识别</option></select>
         <label for="period">公告发布时间</label><select id="period"><option value="">全部时间</option><option value="7">近 7 天</option><option value="30">近 30 天</option><option value="90">近 90 天</option></select>
-        <label class="check"><input type="checkbox" id="high">仅看高相关信息</label><label class="check"><input type="checkbox" id="hide-expired">隐藏已过截止日期</label>
-        <div class="source-note"><span class="note-icon" aria-hidden="true">▥</span><h3>从线索，到原文</h3><p>每条信息保留公开来源。预算、时间及更正内容，请以采购方最新公告为准。</p><span id="coverage">正在读取日报记录</span></div>
+        <label class="check"><input type="checkbox" id="high">仅看高相关信息</label>
+        <div class="source-note"><span class="note-icon" aria-hidden="true">▥</span><h3>从线索，到原文</h3><p>每条信息保留公开来源。投标截止日期已过的公告按北京时间每日自动清除；未识别截止日期的记录，以发布时间后 30 天作为自动清除日，发布时间也未识别的记录仍保留并标注。</p><span id="coverage">正在读取日报记录</span></div>
       </aside>
       <section class="results" aria-label="商机结果">
         <div class="tabs" role="group" aria-label="公告分类"><button class="tab active" data-type="" aria-pressed="true">全部商机 <span id="all-count">—</span></button><button class="tab" data-type="采购公告" aria-pressed="false">采购公告</button><button class="tab" data-type="采购意向" aria-pressed="false">采购意向</button><button class="tab" data-type="采购需求" aria-pressed="false">采购需求</button><button class="tab" data-type="更正公告" aria-pressed="false">更正公告</button></div>
