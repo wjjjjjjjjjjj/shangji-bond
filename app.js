@@ -7,7 +7,7 @@ const today = () => new Intl.DateTimeFormat('sv-SE', {timeZone:'Asia/Shanghai',y
 const daysBetween = (a,b) => (Date.parse(a+'T00:00:00+08:00')-Date.parse(b+'T00:00:00+08:00'))/86400000;
 const tagClass = t => ({'采购意向':'intent','采购需求':'demand','更正公告':'change'}[t] || '');
 function budget(r) {if(r.budgetYuan === null) return `<span class="budget-amount unknown">${r.budgetRaw === '未识别' ? '预算未识别' : '详见预算原文'}</span>`; const n=r.budgetYuan/10000; return `<span class="budget-amount">${new Intl.NumberFormat('zh-CN',{maximumFractionDigits:2}).format(n)}<small>万元</small></span>`;}
-function deadline(r) {if(!r.deadlineDate) return '截止时间未识别'; const d=daysBetween(r.deadlineDate,today()); return `${escape(r.deadlineDate)}${d<0?'<span class="deadline-note">已过截止日期</span>':d===0?'<span class="deadline-note due">截止日为今天</span>':d<=7?`<span class="deadline-note due">${d} 天后截止</span>`:''}`;}
+function deadline(r) {if(!r.deadlineDate) return `截止时间未识别${r.autoClearDate?`<span class="deadline-note due">自动清除日 ${escape(r.autoClearDate)}</span>`:''}`; const d=daysBetween(r.deadlineDate,today()); return `${escape(r.deadlineDate)}${d<0?'<span class="deadline-note">已过截止日期</span>':d===0?'<span class="deadline-note due">截止日为今天</span>':d<=7?`<span class="deadline-note due">${d} 天后截止</span>`:''}`;}
 function selectedRecords(){
   const query=$('query').value.trim().toLocaleLowerCase(); const province=$('province').value, method=$('method').value, b=$('budget').value, period=Number($('period').value);
   return data.records.filter(r=>{
@@ -16,7 +16,7 @@ function selectedRecords(){
     if(province && r.province!==province)return false;
     if(method && r.method!==method)return false;
     if($('high').checked && r.relevance!=='高相关')return false;
-    if($('hide-expired').checked && r.deadlineDate && r.deadlineDate<today())return false;
+    if((r.deadlineDate && r.deadlineDate<today()) || (r.autoClearDate && r.autoClearDate<today()))return false;
     if(period && (!r.publishedDate || daysBetween(today(),r.publishedDate)<0 || daysBetween(today(),r.publishedDate)>=period))return false;
     const n=r.budgetYuan;
     if(b==='unknown' && n!==null)return false;
@@ -38,11 +38,11 @@ function render(){
 }
 function showDetail(id, trigger){
   const r=data.records.find(x=>x.id===id); if(!r)return; lastTrigger=trigger;
-  const pairs=[['省份',r.province],['客户 / 采购人',r.customer],['项目名称',r.projectName],['采购方式',r.methodRaw],['预算金额（原文）',r.budgetRaw],['公告发布日期',r.publishedRaw],['报名 / 获取文件',r.acquisitionTime],['投标截止时间',r.deadlineRaw],['招标网站',r.source],['招标文件',r.documents.length?`已收录 ${r.documents.length} 个公开文件链接`:r.documentNote||'未提供公开文件'],['收录情况',`${r.firstSeen} 首次收录 · ${r.lastSeen} 最近收录`]];
+  const pairs=[['省份',r.province],['客户 / 采购人',r.customer],['项目名称',r.projectName],['采购方式',r.methodRaw],['预算金额（原文）',r.budgetRaw],['公告发布日期',r.publishedRaw],['报名 / 获取文件',r.acquisitionTime],['投标截止时间',r.deadlineRaw],['自动清除日期',r.autoClearDate||'不适用'],['招标网站',r.source],['招标文件',r.documents.length?`已收录 ${r.documents.length} 个公开文件链接`:r.documentNote||'未提供公开文件'],['收录情况',`${r.firstSeen} 首次收录 · ${r.lastSeen} 最近收录`]];
   $('detail-body').innerHTML=`<span class="tag ${tagClass(r.type)}">${escape(r.type)}</span><h2 id="detail-title">${escape(r.title)}</h2><dl class="detail-grid">${pairs.map(([k,v])=>`<dt>${escape(k)}</dt><dd>${escape(v)}</dd>`).join('')}</dl><div class="detail-summary"><h3>公告摘要</h3><p>${escape(r.summary)}</p></div><div class="dialog-actions"><a class="primary" href="${escape(safeLink(r.url))}" target="_blank" rel="noopener noreferrer">查看公告原文 ↗</a>${r.documents.map(d=>`<a class="secondary" href="${escape(safeLink(d.url))}" target="_blank" rel="noopener noreferrer">${escape(d.label)} ↗</a>`).join('')}</div><p class="detail-caution">${r.verification==='详情待核验'?'采集时未能读取详情页，字段需人工核验。':'本页整理自公开采购日报，未对原文作实时复核。'}缺失字段以“未识别”保留；采购安排可能变更，请以采购方最新公告为准。</p>`;
   $('detail').showModal();
 }
-function reset(){category='';page=1;for(const id of ['query','province','method','budget','period'])$(id).value='';$('high').checked=false;$('hide-expired').checked=false;$('sort').value='newest';updateTabs();render();}
+function reset(){category='';page=1;for(const id of ['query','province','method','budget','period'])$(id).value='';$('high').checked=false;$('sort').value='newest';updateTabs();render();}
 function updateTabs(){document.querySelectorAll('[data-type]').forEach(b=>{const active=b.dataset.type===category;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});}
 async function load(){
   $('error').hidden=true;$('cards').setAttribute('aria-busy','true');$('result-count').textContent='正在加载采购信息…';
@@ -58,7 +58,7 @@ async function load(){
 }
 $('search-form').addEventListener('submit',e=>{e.preventDefault();page=1;render();});
 $('query').addEventListener('input',()=>{page=1;render();});
-for(const id of ['province','method','budget','period','high','hide-expired','sort'])$(id).addEventListener('change',()=>{page=1;render();});
+for(const id of ['province','method','budget','period','high','sort'])$(id).addEventListener('change',()=>{page=1;render();});
 document.querySelectorAll('[data-type]').forEach(b=>b.addEventListener('click',()=>{category=b.dataset.type;page=1;updateTabs();render();}));
 for(const id of ['reset','clear-empty'])$(id).addEventListener('click',reset);
 $('cards').addEventListener('click',e=>{const b=e.target.closest('[data-detail]');if(b)showDetail(b.dataset.detail,b);});
