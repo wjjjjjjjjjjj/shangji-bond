@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "exportedAt": "2026-09-30T17:36:39+08:00",
+  "exportedAt": "2026-09-30T23:58:31+08:00",
   "latestReportAt": "2026-09-30 17:01",
   "reportCount": 31,
   "noticeCount": 146,
-  "insightCount": 1,
+  "insightCount": 3,
   "records": [
     {
       "id": "f84a436975699888",
@@ -4341,6 +4341,22 @@
   ],
   "insights": [
     {
+      "id": "193e5ed080564fc6",
+      "title": "Pulse of the Profession® 2026: Driving Success in Complex Projects — From Navigating Tasks to Navigating Systems",
+      "kind": "深度分析",
+      "publishedRaw": "2026-05-12",
+      "publishedDate": "2026-05-12",
+      "sourceName": "Project Management Institute（PMI）",
+      "author": "未识别",
+      "coreView": "PMI将项目复杂性归因于组织治理与目标不一致、外部环境变化，以及多方利益相关者之间的激励和协作冲突。研究指出，复杂性管理有效的团队更可能交付成功；发起人尽早对齐成功定义、提前做情景推演、建立依赖关系和共同治理语言，是降低复杂性影响的关键实践。",
+      "whyWorth": "它把落地风险从“进度、功能是否完成”扩展到战略目标、决策权、跨部门依赖和团队承压，特别适用于档案数字化、系统建设、数据迁移、制度流程调整并行推进的项目。可帮助售前把价值兑现和组织准备度纳入方案论证。",
+      "presalesUse": "立项/方案阶段与客户共同画出目标—业务流程—系统/数据—责任部门依赖图，确认业务发起人、验收人、数据责任人和关键决策机制；用情景推演检验历史数据质量差、接口延迟、政策变更、关键用户资源不足等情况，并把风险触发条件、责任人、缓解措施和阶段性收益验收写入实施路线图。",
+      "evidenceLimit": "来源为PMI面向项目管理专业人士的全球研究及其官方发布材料，不是档案行业专项因果研究；公开摘要页未呈现完整抽样框和全部方法细节，报告中的成功率关联不能解释为单一实践带来的因果效果。原报告标注2026年5月，PMI新闻稿于2026-05-12发布。",
+      "url": "https://www.pmi.org/learning/thought-leadership/driving-success-in-complex-projects",
+      "firstSeen": "2026-09-30",
+      "lastSeen": "2026-09-30"
+    },
+    {
       "id": "77e06d7e1704871d",
       "title": "G2 2026 Buyer Behavior Report",
       "kind": "报告",
@@ -4353,6 +4369,22 @@
       "presalesUse": "需求访谈时分别确认业务负责人、档案业务用户、信息化/安全部门与预算决策者的成功标准；把功能清单改写为可核验的现状基线、目标结果、总拥有成本、实施依赖与风险应对。准备可供客户内部转述的投资回报假设、分阶段验收和客户案例；所有金额与收益需用客户数据验证，避免直接套用报告比例。",
       "evidenceLimit": "报告研究对象是全球 B2B 软件采购，不是中国政府采购或档案行业专项样本；页面未标明具体发布日期。比例为 G2 自报调查和访谈结果，应作为买方决策趋势线索，不可当作本地市场基准或因果结论。",
       "url": "https://sell.g2.com/2026-buyer-behavior-report",
+      "firstSeen": "2026-09-30",
+      "lastSeen": "2026-09-30"
+    },
+    {
+      "id": "1a1d5c1944340bb0",
+      "title": "Requirements prioritization in the software industry: Insights from a practitioner survey",
+      "kind": "论文",
+      "publishedRaw": "未识别",
+      "publishedDate": null,
+      "sourceName": "Journal of Systems and Software",
+      "author": "Renato Cesar Ais；Érica Ferreira De Souza；Alinne Cristianne Correa Souza",
+      "coreView": "研究调查了巴西软件行业57名从业者的需求优先级实践：实际工作中常用MoSCoW、GUT等相对简单的方法，排序不仅取决于技术指标，也受到业务价值、成本、风险、依赖关系、利益相关者偏好与监管约束等因素影响；角色间优先级冲突、沟通断层和需求变化是常见挑战。",
+      "whyWorth": "售前常见偏差是把单个业务部门提出的功能清单等同于全组织的真实优先级。论文强调优先级是协同决策与组织治理问题，帮助在方案阶段识别“用户想要”与“决策者愿意投资且组织能落地”的差距。",
+      "presalesUse": "在需求调研收尾前组织一次跨角色优先级工作坊，分别邀请业务负责人、档案用户、信息化、安全、财务/采购代表；对每项需求记录预期业务结果、紧迫度、成本/风险、依赖条件与证据来源，再共同划分必需、应做和可延期项，并将争议点列为待决策事项进入方案。",
+      "evidenceLimit": "研究对象为巴西软件行业57名从业者，属特定国家和行业的调查结果，样本量有限且非档案或中国政府采购样本；不应把方法使用频率或比例直接外推为本地基准。ScienceDirect页面标注卷期为2026年7月，未在可见元数据中核实具体日，故发布日期标未识别。",
+      "url": "https://www.sciencedirect.com/science/article/pii/S0164121226000798",
       "firstSeen": "2026-09-30",
       "lastSeen": "2026-09-30"
     }
