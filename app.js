@@ -1,7 +1,7 @@
 const $ = (id) => document.getElementById(id);
 const escape = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safeLink = value => {try {const u=new URL(value); return ['https:', 'http:'].includes(u.protocol) && !u.username && !u.password ? u.href : ''; } catch {return '';}};
-let data = null, category = '', page = 1, lastTrigger = null;
+let data = null, category = '', moduleMode = 'sales', page = 1, lastTrigger = null;
 const pageSize = 12;
 const today = () => new Intl.DateTimeFormat('sv-SE', {timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const daysBetween = (a,b) => (Date.parse(a+'T00:00:00+08:00')-Date.parse(b+'T00:00:00+08:00'))/86400000;
@@ -36,7 +36,7 @@ function selectedInsights(){
 }
 function render(){
   if(!data)return;
-  const isInsight=category==='售前信息'; $('workspace').classList.toggle('insights-mode',isInsight);
+  const isInsight=moduleMode==='presales'; $('workspace').classList.toggle('presales-mode',isInsight);
   $('query').placeholder=isInsight?'搜索售前方法、价值表达或落地风险':'搜索项目、采购人或关键词，例如：电子档案';
   const rows=isInsight?selectedInsights():selectedRecords(),pages=Math.max(1,Math.ceil(rows.length/pageSize)); page=Math.min(page,pages);
   $('result-count').innerHTML=isInsight?`共 <strong>${rows.length}</strong> 篇售前信息`:`共 <strong>${rows.length}</strong> 条公告${category?' · '+escape(category):''}`;
@@ -52,6 +52,8 @@ function showDetail(id, trigger){
 }
 function reset(){category='';page=1;for(const id of ['query','province','method','budget','period'])$(id).value='';$('high').checked=false;$('sort').value='newest';updateTabs();render();}
 function updateTabs(){document.querySelectorAll('[data-type]').forEach(b=>{const active=b.dataset.type===category;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});}
+function updateModuleNav(){document.querySelectorAll('[data-module]').forEach(button=>{const active=button.dataset.module===moduleMode;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});}
+function switchModule(mode){if(!['sales','presales'].includes(mode))return;moduleMode=mode;category='';page=1;for(const id of ['query','province','method','budget','period'])$(id).value='';$('high').checked=false;$('sort').value='newest';updateTabs();updateModuleNav();render();}
 async function load(){
   $('error').hidden=true;$('cards').setAttribute('aria-busy','true');$('result-count').textContent='正在加载采购信息…';
   try {
@@ -69,6 +71,7 @@ $('search-form').addEventListener('submit',e=>{e.preventDefault();page=1;render(
 $('query').addEventListener('input',()=>{page=1;render();});
 for(const id of ['province','method','budget','period','high','sort'])$(id).addEventListener('change',()=>{page=1;render();});
 document.querySelectorAll('[data-type]').forEach(b=>b.addEventListener('click',()=>{category=b.dataset.type;page=1;updateTabs();render();}));
+document.querySelectorAll('[data-module]').forEach(b=>b.addEventListener('click',()=>switchModule(b.dataset.module)));
 for(const id of ['reset','clear-empty'])$(id).addEventListener('click',reset);
 $('cards').addEventListener('click',e=>{const b=e.target.closest('[data-detail]');if(b)showDetail(b.dataset.detail,b);});
 $('close-detail').addEventListener('click',()=>$('detail').close());
@@ -82,8 +85,8 @@ if(document.modelContext?.registerTool){
   const tool={name:'filter_archive_notices',title:'筛选档案采购与售前信息',description:'更新关键词和信息分类筛选，返回匹配数量及前 12 条采购公告或售前研究。',inputSchema:{type:'object',properties:{query:{type:'string',maxLength:200},type:{type:'string',enum:['','采购公告','采购意向','采购需求','更正公告','售前信息']}},additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:true},execute(input){
     if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(k=>!['query','type'].includes(k))||(input.query!==undefined&&(typeof input.query!=='string'||input.query.length>200))||(input.type!==undefined&&!['','采购公告','采购意向','采购需求','更正公告','售前信息'].includes(input.type)))throw new Error('筛选参数无效');
     if(!data)throw new Error('采购信息尚未加载');
-    reset();$('query').value=input.query||'';category=input.type||'';updateTabs();render();const rows=category==='售前信息'?selectedInsights():selectedRecords();
-    return category==='售前信息'?{count:rows.length,insights:rows.slice(0,12).map(r=>({id:r.id,title:r.title,kind:r.kind,sourceName:r.sourceName,url:r.url}))}:{count:rows.length,notices:rows.slice(0,12).map(r=>({id:r.id,title:r.title,type:r.type,province:r.province,url:r.url}))};
+    switchModule(input.type==='售前信息'?'presales':'sales');$('query').value=input.query||'';category=moduleMode==='sales'?(input.type||''):'';updateTabs();render();const rows=moduleMode==='presales'?selectedInsights():selectedRecords();
+    return moduleMode==='presales'?{count:rows.length,insights:rows.slice(0,12).map(r=>({id:r.id,title:r.title,kind:r.kind,sourceName:r.sourceName,url:r.url}))}:{count:rows.length,notices:rows.slice(0,12).map(r=>({id:r.id,title:r.title,type:r.type,province:r.province,url:r.url}))};
   }};
   try{Promise.resolve(document.modelContext.registerTool(tool,{signal:lifecycle.signal})).catch(()=>{});}catch{}
   window.addEventListener('pagehide',()=>lifecycle.abort(),{once:true});
