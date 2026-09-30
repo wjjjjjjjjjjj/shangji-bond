@@ -2,16 +2,24 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>档案商机 — 全国档案采购公告与意向</title>
-  <meta name="description" content="集中查看档案信息化采购公告、采购意向和采购需求，按地区与采购方式筛选，追溯公告原文和公开采购文件。">
+  <title>档案商机 — 档案采购信息与售前洞察</title>
+  <meta name="description" content="集中查看档案信息化采购公告、采购意向和采购需求，并追踪售前方法论、业务价值表达与项目落地风险研究。">
   <meta name="theme-color" content="#123e3c"><link rel="icon" href="./favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./styles.css">
+  <style>
+    .workspace.insights-mode{grid-template-columns:minmax(0,1fr)}.workspace.insights-mode .sidebar,.workspace.insights-mode .sort-label{display:none}
+    .insight-card{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:22px 24px;box-shadow:0 4px 15px #173b3a08;min-width:0}
+    .insight-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12px}.insight-tag{background:#e5f1ed;color:var(--green)}
+    .insight-card h2{font-size:19px;line-height:1.6;color:var(--ink);margin:16px 0 18px}.insight-card section{margin:14px 0}.insight-card h3{font-size:13px;color:var(--green);margin:0 0 5px}.insight-card p{font-size:14px;line-height:1.85;color:#536568;margin:0;overflow-wrap:anywhere}
+    .insight-card .presales-takeaway{background:#f1f7f4;border-radius:8px;padding:13px 15px}.insight-card .insight-boundary{font-size:12px;color:#768486;margin-top:13px}.insight-card .card-footer{margin-top:18px}.insight-source{color:var(--green);text-decoration:none}
+    @media(max-width:580px){.insight-card{padding:19px 18px}.insight-card h2{font-size:17px}}
+  </style>
 </head>
 <body>
   <header class="topbar"><a class="brand" href="./" aria-label="档案商机首页"><span class="brand-mark" aria-hidden="true">▤</span><span>档案商机<span class="brand-sub">采购公告与意向</span></span></a><span class="public-label"><span aria-hidden="true">◎</span> 公开浏览 · 无需登录</span></header>
   <main>
-    <section class="intro"><div><p class="eyebrow">ARCHIVE PROCUREMENT</p><h1>发现下一次合作机会</h1><p class="intro-copy">汇集档案信息化相关采购信息，让每一条线索有据可查。</p></div><div class="update"><span>最近收录的日报</span><strong id="updated">正在读取</strong><span>北京时间 · 采集范围内公开信息</span></div></section>
-    <form id="search-form" class="search-bar" role="search"><span aria-hidden="true" class="search-icon">⌕</span><label class="sr-only" for="query">搜索项目名称、采购人或关键词</label><input id="query" type="search" placeholder="搜索项目名称、采购人或关键词，例如：电子档案" autocomplete="off"><button type="submit" class="primary">搜索商机</button></form>
-    <div class="workspace">
+    <section class="intro"><div><p class="eyebrow">ARCHIVE PROCUREMENT &amp; PRESALES INSIGHT</p><h1>发现合作机会，也看懂客户决策</h1><p class="intro-copy">汇集档案信息化采购线索与售前方法、价值表达和落地风险研究。</p></div><div class="update"><span>最近收录的日报</span><strong id="updated">正在读取</strong><span>北京时间 · 来源可追溯</span></div></section>
+    <form id="search-form" class="search-bar" role="search"><span aria-hidden="true" class="search-icon">⌕</span><label class="sr-only" for="query">搜索项目、研究主题或关键词</label><input id="query" type="search" placeholder="搜索项目、研究主题或关键词，例如：业务价值" autocomplete="off"><button type="submit" class="primary">搜索</button></form>
+    <div class="workspace" id="workspace">
       <aside class="sidebar" aria-label="筛选条件"><div class="filter-heading"><h2>筛选商机</h2><button id="reset" class="text-button" type="button">重置</button></div>
         <label for="province">项目地区</label><select id="province"><option value="">全国地区</option></select>
         <label for="method">采购方式</label><select id="method"><option value="">全部方式</option></select>
@@ -21,7 +29,7 @@
         <div class="source-note"><span class="note-icon" aria-hidden="true">▥</span><h3>从线索，到原文</h3><p>每条信息保留公开来源。投标截止日期已过的公告按北京时间每日自动清除；未识别截止日期的记录，以发布时间后 30 天作为自动清除日；发布时间晚于北京时间当天的记录先进入待核查，不公开展示。</p><span id="coverage">正在读取日报记录</span></div>
       </aside>
       <section class="results" aria-label="商机结果">
-        <div class="tabs" role="group" aria-label="公告分类"><button class="tab active" data-type="" aria-pressed="true">全部商机 <span id="all-count">—</span></button><button class="tab" data-type="采购公告" aria-pressed="false">采购公告</button><button class="tab" data-type="采购意向" aria-pressed="false">采购意向</button><button class="tab" data-type="采购需求" aria-pressed="false">采购需求</button><button class="tab" data-type="更正公告" aria-pressed="false">更正公告</button></div>
+        <div class="tabs" role="group" aria-label="信息分类"><button class="tab active" data-type="" aria-pressed="true">全部商机 <span id="all-count">—</span></button><button class="tab" data-type="采购公告" aria-pressed="false">采购公告</button><button class="tab" data-type="采购意向" aria-pressed="false">采购意向</button><button class="tab" data-type="采购需求" aria-pressed="false">采购需求</button><button class="tab" data-type="更正公告" aria-pressed="false">更正公告</button><button class="tab insight-tab" data-type="售前信息" aria-pressed="false">售前信息 <span id="insight-count">0</span></button></div>
         <div class="result-bar"><p id="result-count" role="status" aria-live="polite">正在加载采购信息…</p><label class="sort-label" for="sort">排序<select id="sort"><option value="newest">发布时间：最新优先</option><option value="budget">预算金额：从高到低</option><option value="deadline">截止日期：最近优先</option></select></label></div>
         <div class="data-notice" id="freshness" hidden></div>
         <div id="cards" class="cards" aria-busy="true"></div>
