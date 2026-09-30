@@ -29,11 +29,18 @@ function selectedRecords(){
     return true;
   }).sort((a,b)=>$('sort').value==='budget' ? (b.budgetYuan??-1)-(a.budgetYuan??-1) : $('sort').value==='deadline' ? (a.deadlineDate||'9999').localeCompare(b.deadlineDate||'9999') : (b.publishedDate||'').localeCompare(a.publishedDate||''));
 }
+function selectedInsights(){
+  const query=$('query').value.trim().toLocaleLowerCase();
+  return (data.insights||[]).filter(item=>!query||[item.title,item.sourceName,item.author,item.coreView,item.whyWorth,item.presalesUse,item.evidenceLimit].join(' ').toLocaleLowerCase().includes(query))
+    .sort((a,b)=>(b.publishedDate||'').localeCompare(a.publishedDate||''));
+}
 function render(){
   if(!data)return;
-  const rows=selectedRecords(),pages=Math.max(1,Math.ceil(rows.length/pageSize)); page=Math.min(page,pages);
-  $('result-count').innerHTML=`共 <strong>${rows.length}</strong> 条公告${category?' · '+escape(category):''}`;
-  $('cards').innerHTML=rows.slice((page-1)*pageSize,page*pageSize).map(r=>`<article class="card"><div class="card-top"><span class="tag ${tagClass(r.type)}">${escape(r.type)}</span><span class="location">${escape(r.province==='未识别'?'地区未识别':r.province)}</span>${r.relevance==='高相关'?'<span class="relevance">高相关</span>':''}</div><h2 class="card-title"><button data-detail="${r.id}" title="${escape(r.title)}">${escape(r.projectName)}</button></h2><div class="budget-row">${budget(r)}<span class="budget-caption">${r.type==='采购意向'?'意向预算':'项目预算'}</span></div><dl class="card-info"><dt>采购人</dt><dd class="customer" title="${escape(r.customer)}">${escape(r.customer==='未识别'?'采购人未识别':r.customer)}</dd><dt>发布时间</dt><dd>${escape(r.publishedDate||r.publishedRaw)}</dd><dt>投标截止</dt><dd>${deadline(r)}</dd></dl>${r.verification==='详情待核验'?'<p class="quality-note">详情待核验 · 采集时详情页未能读取</p>':''}<div class="card-footer"><a class="source-link" href="${escape(safeLink(r.url))}" target="_blank" rel="noopener noreferrer" title="查看${escape(r.source)}公告原文">${escape(r.source)} ↗</a><button class="details-button" data-detail="${r.id}">查看详情 <span aria-hidden="true">→</span></button></div></article>`).join('');
+  const isInsight=category==='售前信息'; $('workspace').classList.toggle('insights-mode',isInsight);
+  $('query').placeholder=isInsight?'搜索售前方法、价值表达或落地风险':'搜索项目、采购人或关键词，例如：电子档案';
+  const rows=isInsight?selectedInsights():selectedRecords(),pages=Math.max(1,Math.ceil(rows.length/pageSize)); page=Math.min(page,pages);
+  $('result-count').innerHTML=isInsight?`共 <strong>${rows.length}</strong> 篇售前信息`:`共 <strong>${rows.length}</strong> 条公告${category?' · '+escape(category):''}`;
+  $('cards').innerHTML=rows.slice((page-1)*pageSize,page*pageSize).map(r=>isInsight?`<article class="insight-card"><div class="insight-meta"><span class="tag insight-tag">${escape(r.kind)}</span><span>${escape(r.publishedDate||r.publishedRaw||'发布日期未识别')}</span><span>${escape(r.sourceName)}</span></div><h2>${escape(r.title)}</h2><section><h3>核心观点</h3><p>${escape(r.coreView)}</p></section><section><h3>为什么值得关注</h3><p>${escape(r.whyWorth)}</p></section><section class="presales-takeaway"><h3>可用于售前工作的启发</h3><p>${escape(r.presalesUse)}</p></section><p class="insight-boundary"><strong>证据与适用边界：</strong>${escape(r.evidenceLimit)}</p><div class="card-footer"><span class="source-link">${escape(r.sourceName)}</span><a class="details-button insight-source" href="${escape(safeLink(r.url))}" target="_blank" rel="noopener noreferrer">阅读原文 <span aria-hidden="true">↗</span></a></div></article>`:`<article class="card"><div class="card-top"><span class="tag ${tagClass(r.type)}">${escape(r.type)}</span><span class="location">${escape(r.province==='未识别'?'地区未识别':r.province)}</span>${r.relevance==='高相关'?'<span class="relevance">高相关</span>':''}</div><h2 class="card-title"><button data-detail="${r.id}" title="${escape(r.title)}">${escape(r.projectName)}</button></h2><div class="budget-row">${budget(r)}<span class="budget-caption">${r.type==='采购意向'?'意向预算':'项目预算'}</span></div><dl class="card-info"><dt>采购人</dt><dd class="customer" title="${escape(r.customer)}">${escape(r.customer==='未识别'?'采购人未识别':r.customer)}</dd><dt>发布时间</dt><dd>${escape(r.publishedDate||r.publishedRaw)}</dd><dt>投标截止</dt><dd>${deadline(r)}</dd></dl>${r.verification==='详情待核验'?'<p class="quality-note">详情待核验 · 采集时详情页未能读取</p>':''}<div class="card-footer"><a class="source-link" href="${escape(safeLink(r.url))}" target="_blank" rel="noopener noreferrer" title="查看${escape(r.source)}公告原文">${escape(r.source)} ↗</a><button class="details-button" data-detail="${r.id}">查看详情 <span aria-hidden="true">→</span></button></div></article>`).join('');
   $('cards').setAttribute('aria-busy','false'); $('empty').hidden=rows.length>0; $('pagination').hidden=pages<2;
   $('page-info').textContent=`${page} / ${pages}`; $('prev').disabled=page===1; $('next').disabled=page===pages;
 }
@@ -48,9 +55,10 @@ function updateTabs(){document.querySelectorAll('[data-type]').forEach(b=>{const
 async function load(){
   $('error').hidden=true;$('cards').setAttribute('aria-busy','true');$('result-count').textContent='正在加载采购信息…';
   try {
-    const response=await fetch('./data.json',{cache:'no-store'});if(!response.ok)throw new Error('Data unavailable');const next=await response.json();if(next.schemaVersion!==1||!Array.isArray(next.records))throw new Error('Invalid data');data=next;
+    const response=await fetch('./data.json',{cache:'no-store'});if(!response.ok)throw new Error('Data unavailable');const next=await response.json();if(next.schemaVersion!==1||!Array.isArray(next.records))throw new Error('Invalid data');if(!Array.isArray(next.insights))next.insights=[];data=next;
     $('updated').textContent=data.latestReportAt||'暂无日报';$('all-count').textContent=data.records.length;
-    $('coverage').textContent=`已整理 ${data.reportCount} 份日报 · ${data.records.length} 条公告`;
+    $('insight-count').textContent=data.insights.length;
+    $('coverage').textContent=`已整理 ${data.reportCount} 份日报 · ${data.records.length} 条公告 · ${data.insights.length} 篇售前研究`;
     for(const [id,key,label] of [['province','province','全国地区'],['method','method','全部方式']]){const values=[...new Set(data.records.map(r=>r[key]))].sort((a,b)=>a==='未识别'?1:b==='未识别'?-1:a.localeCompare(b,'zh'));$(id).innerHTML=`<option value="">${label}</option>`+values.map(v=>`<option value="${escape(v)}">${escape(v)}</option>`).join('');}
     const stale=!data.latestReportAt||daysBetween(today(),data.latestReportAt.slice(0,10))>1;
     $('freshness').hidden=!stale;$('freshness').textContent=`最近收录的日报为 ${data.latestReportAt||'未知时间'}。近期数据尚未更新，以下为历史记录；这不代表近期没有新公告。`;
@@ -71,11 +79,11 @@ $('retry').addEventListener('click',load);
 // Optional agent interface; browsing and filtering also work in ordinary browsers.
 if(document.modelContext?.registerTool){
   const lifecycle=new AbortController();
-  const tool={name:'filter_archive_notices',title:'筛选档案采购公告',description:'更新页面的关键词和公告分类筛选，返回匹配数量及前 12 条公开公告。',inputSchema:{type:'object',properties:{query:{type:'string',maxLength:200},type:{type:'string',enum:['','采购公告','采购意向','采购需求','更正公告']}},additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:true},execute(input){
-    if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(k=>!['query','type'].includes(k))||(input.query!==undefined&&(typeof input.query!=='string'||input.query.length>200))||(input.type!==undefined&&!['','采购公告','采购意向','采购需求','更正公告'].includes(input.type)))throw new Error('筛选参数无效');
+  const tool={name:'filter_archive_notices',title:'筛选档案采购与售前信息',description:'更新关键词和信息分类筛选，返回匹配数量及前 12 条采购公告或售前研究。',inputSchema:{type:'object',properties:{query:{type:'string',maxLength:200},type:{type:'string',enum:['','采购公告','采购意向','采购需求','更正公告','售前信息']}},additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:true},execute(input){
+    if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(k=>!['query','type'].includes(k))||(input.query!==undefined&&(typeof input.query!=='string'||input.query.length>200))||(input.type!==undefined&&!['','采购公告','采购意向','采购需求','更正公告','售前信息'].includes(input.type)))throw new Error('筛选参数无效');
     if(!data)throw new Error('采购信息尚未加载');
-    reset();$('query').value=input.query||'';category=input.type||'';updateTabs();render();const rows=selectedRecords();
-    return {count:rows.length,notices:rows.slice(0,12).map(r=>({id:r.id,title:r.title,type:r.type,province:r.province,url:r.url}))};
+    reset();$('query').value=input.query||'';category=input.type||'';updateTabs();render();const rows=category==='售前信息'?selectedInsights():selectedRecords();
+    return category==='售前信息'?{count:rows.length,insights:rows.slice(0,12).map(r=>({id:r.id,title:r.title,kind:r.kind,sourceName:r.sourceName,url:r.url}))}:{count:rows.length,notices:rows.slice(0,12).map(r=>({id:r.id,title:r.title,type:r.type,province:r.province,url:r.url}))};
   }};
   try{Promise.resolve(document.modelContext.registerTool(tool,{signal:lifecycle.signal})).catch(()=>{});}catch{}
   window.addEventListener('pagehide',()=>lifecycle.abort(),{once:true});
