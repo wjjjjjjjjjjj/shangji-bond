@@ -1,11 +1,97 @@
 {
   "schemaVersion": 1,
-  "exportedAt": "2026-10-17T17:20:04+08:00",
-  "latestReportAt": "2026-10-17 16:59",
-  "reportCount": 41,
-  "noticeCount": 186,
-  "insightCount": 32,
+  "exportedAt": "2026-10-18T17:13:36+08:00",
+  "latestReportAt": "2026-10-18 17:03",
+  "reportCount": 42,
+  "noticeCount": 189,
+  "insightCount": 35,
   "records": [
+    {
+      "id": "6a4f946744029361",
+      "title": "浙江乐诚工程咨询有限公司关于浙江省档案馆 2026年度“一档一码” 档案 码赋码项目的竞争性谈判公告",
+      "projectName": "浙江乐诚工程咨询有限公司关于浙江省档案馆 2026年度“一档一码” 档案 码赋码项目",
+      "url": "http://www.ccgp.gov.cn/cggg/dfgg/jzxtpgg/202610/t20261017_27513034.htm",
+      "province": "浙江",
+      "customer": "浙江省档案馆",
+      "type": "采购公告",
+      "method": "竞争性谈判",
+      "methodRaw": "竞争性谈判",
+      "budgetRaw": "835400元",
+      "budgetYuan": 835400.0,
+      "publishedRaw": "2026-10-17",
+      "publishedDate": "2026-10-17",
+      "acquisitionTime": "详见公告正文",
+      "deadlineRaw": "2026-10-22 13:30",
+      "deadlineDate": "2026-10-22",
+      "autoClearDate": null,
+      "source": "中国政府采购网中央主网",
+      "documents": [],
+      "documentNote": "未提供公开文件",
+      "summary": "项目概况 2026年度“一档一码”档案码赋码项目 采购项目的潜在供应商应在 政采云平台线上获取 获取（下载）采购文件，并于 2026年10月22日 13:30 （北京时间）前提交（上传）响应文件。 一、项目基本情况 项目编号： 330000263630010000093-ZJYC2026212（TP） 项目名称： 2026年度“一档一码”档案码赋码项目 采购方式：竞争性谈判 预算金额（元）： 835400 最高限价（元）： 835400……",
+      "relevance": "高相关",
+      "verification": "日报收录",
+      "firstSeen": "2026-10-18",
+      "lastSeen": "2026-10-18"
+    },
+    {
+      "id": "0f8c9cbc89dbe9ee",
+      "title": "新疆生产建设兵团公共资源交易中心第四分中心关于六十一团 档案 室改造项目的竞争性磋商公告",
+      "projectName": "新疆生产建设兵团公共资源交易中心第四分中心关于六十一团 档案 室改造项目",
+      "url": "http://www.ccgp.gov.cn/cggg/dfgg/jzxcs/202610/t20261017_27513308.htm",
+      "province": "新疆",
+      "customer": "新疆生产建设兵团第四师六十一团",
+      "type": "采购公告",
+      "method": "竞争性磋商",
+      "methodRaw": "竞争性磋商",
+      "budgetRaw": "740000元",
+      "budgetYuan": 740000.0,
+      "publishedRaw": "2026-10-17",
+      "publishedDate": "2026-10-17",
+      "acquisitionTime": "2026年10月17日至2026年10月26日",
+      "deadlineRaw": "2026年10月28日10:30",
+      "deadlineDate": "2026-10-28",
+      "autoClearDate": null,
+      "source": "中国政府采购网中央主网",
+      "documents": [
+        {
+          "label": "下载文件1",
+          "url": "https://zcy-gov-open-doc.oss-cn-north-2-gov-1.aliyuncs.com/1024FPA/660400/10015467010/202610/278ef69d-291a-429c-834c-d23f4150b5f6.pdf"
+        }
+      ],
+      "documentNote": "",
+      "summary": "‍ 项目概况 六十一团档案室改造项目 采购项目的潜在供应商应在 政采云平台线上 获取采购文件，并于 2026年10月28日 10:30 （北京时间）前提交响应文件。 一、项目基本情况 项目编号： DSSJZXCS-2026-041 项目名称： 六十一团档案室改造项目 采购方式：竞争性磋商 预算金额（元）： 740000 最高限价（元）： 740000 采购需求： 标项名称： 六十一团档案室改造项目 数量： 1 预算金额（元）： 7400……",
+      "relevance": "相关",
+      "verification": "日报收录",
+      "firstSeen": "2026-10-18",
+      "lastSeen": "2026-10-18"
+    },
+    {
+      "id": "8b78ba673d2a7440",
+      "title": "长丰县第二轮土地承包到期后再延长30年试点工作 档案 整理及数字化加工服务更正公告[2026]",
+      "projectName": "长丰县第二轮土地承包到期后再延长30年试点工作 档案 整理及数字化加工服务更正公告[2026]",
+      "url": "http://www.ccgp.gov.cn/cggg/dfgg/gzgg/202610/t20261017_27512895.htm",
+      "province": "安徽",
+      "customer": "长丰县农业农村局",
+      "type": "更正公告",
+      "method": "未识别",
+      "methodRaw": "未识别",
+      "budgetRaw": "未识别",
+      "budgetYuan": null,
+      "publishedRaw": "2026-10-17",
+      "publishedDate": "2026-10-17",
+      "acquisitionTime": "未识别",
+      "deadlineRaw": "未识别",
+      "deadlineDate": null,
+      "autoClearDate": "2026-11-16",
+      "source": "中国政府采购网中央主网",
+      "documents": [],
+      "documentNote": "未提供公开文件",
+      "summary": "长丰县第二轮土地承包到期后再延长 30年试点工作档案整理及数字化加工服务 更正公告 一、项目基本情况 原公告的采购项目编号： 2026ACCFN00253 原公告的采购项目名称： 长丰县第二轮土地承包到期后再延长 30年试点工作档案整理及数字化加工服务 首次公告日期： 2026年 10 月 10 日 二、更正信息 更正事项： □ 采购公告 ☑ 采购文件 □采购结果 更正内容： 无 更正日期： 2026年 10 月 16 日 三、其他补充……",
+      "relevance": "相关",
+      "verification": "日报收录",
+      "firstSeen": "2026-10-18",
+      "lastSeen": "2026-10-18"
+    },
     {
       "id": "b25d5cd92f13119b",
       "title": "金寨县第二轮土地承包到期后再延长30年试点工作 档案 数字化服务采购项目（二次）竞争性磋商公告",
@@ -2013,12 +2099,12 @@
           "url": "https://www.bidding.csg.cn/filesrv/srv/file/download/1200445407/E96CA2FA947A4AB19713A592A7D8C992"
         },
         {
-          "label": "下载文件2",
-          "url": "https://www.bidding.csg.cn/filesrv/srv/file/download/1200445407/14DB8A10729D4E098E31C87447DA6AB8"
-        },
-        {
           "label": "下载文件3",
           "url": "https://www.bidding.csg.cn/filesrv/srv/file/download/1200445407/9A002B7B07FA4E2E9FE56185FA5B13E2"
+        },
+        {
+          "label": "下载文件2",
+          "url": "https://www.bidding.csg.cn/filesrv/srv/file/download/1200445407/14DB8A10729D4E098E31C87447DA6AB8"
         }
       ],
       "documentNote": "",
@@ -5603,6 +5689,22 @@
       "lastSeen": "2026-10-15"
     },
     {
+      "id": "5987484784e84899",
+      "title": "IT Dashboard：部分机构的投资风险评级未能充分反映风险",
+      "kind": "报告",
+      "publishedRaw": "2026-10-07",
+      "publishedDate": "2026-10-07",
+      "sourceName": "美国政府问责局（GAO）",
+      "author": "未识别",
+      "coreView": "GAO抽查12个联邦机构的53项重大IT投资，将自身基于项目风险材料的评估与机构CIO评级比较：两者27项一致，GAO认为风险更高24项、风险更低2项；另发现53项中有21项评级未按机构流程及时更新。报告指出，过期评级可能让高风险项目得不到及时监督。",
+      "whyWorth": "它把“风险是否存在”和“风险指标是否及时、可信”分开检查，提醒决策者不要只看项目自报的绿黄红状态，也要追问指标来源、更新周期和能够触发的管理动作。",
+      "presalesUse": "档案信息化立项/汇报时，可把存量系统依赖、数据质量、迁移抽检、接口联调、权限与验收准备度列为有证据的风险项，逐项给出证据来源、责任人、复核周期和升级动作；展示风险变化与决策影响，而不是只报进度颜色。",
+      "evidenceLimit": "这是GAO对美国联邦机构选定重大IT投资的审计，不代表中国政府项目或档案信息化项目的风险发生率。可借鉴风险评级的证据化与及时更新方法，不可移植其比例作为行业基准。",
+      "url": "https://www.gao.gov/products/gao-27-108416",
+      "firstSeen": "2026-10-18",
+      "lastSeen": "2026-10-18"
+    },
+    {
       "id": "e0e5a0ec37692038",
       "title": "Good governance in 2026: Less about process, more about behaviour",
       "kind": "深度分析",
@@ -5617,6 +5719,22 @@
       "url": "https://www.apm.org.uk/blog/good-governance-in-2026-less-about-process-more-about-behaviour/",
       "firstSeen": "2026-10-03",
       "lastSeen": "2026-10-03"
+    },
+    {
+      "id": "ff32630e70ab6435",
+      "title": "当以利益相关方为中心的需求工程仍不够：遗留系统现代化行动研究",
+      "kind": "论文",
+      "publishedRaw": "2026-09-07",
+      "publishedDate": "2026-09-07",
+      "sourceName": "arXiv 预印本",
+      "author": "Ruward S. Karper、Damian A. Tamburri、Alessio Ferrari、Willem-Jan van den Heuvel",
+      "coreView": "研究在一家跨国能源企业的遗留系统现代化场景中，采用利益相关方识别、半结构化访谈、Delphi共识和MoSCoW优先级排序。参与者普遍认可需求表述的可理解性与相关性，但对这些需求在旧系统中是否已实现，意见分歧明显；作者据此认为访谈所得需求还需与系统现状证据交叉核对。",
+      "whyWorth": "它指出售前常见的盲点：决策者和业务人员能说清“想要什么”，却未必能准确描述旧系统“已经做了什么”。需求访谈本身不等于完成了现状盘点或差距分析。",
+      "presalesUse": "需求调研可以并行形成两张清单：目标需求（to-be）与现状能力（as-is）。通过抽样档案、目录、流程、接口、权限、迁移数据和旧系统功能演示逐项建立映射，并把“已支持、部分支持、未支持、待核验”标记为可追溯证据，降低把存量能力误判为缺口或把真实缺口漏掉的风险。",
+      "evidenceLimit": "这是arXiv上的预印本，研究对象为一家跨国能源企业的单个行动研究案例；不能据此推断政府档案项目的普遍比例或效果。这里迁移到档案信息化售前的做法属于方法启发，需结合客户现场验证。",
+      "url": "https://arxiv.org/abs/2609.07340",
+      "firstSeen": "2026-10-18",
+      "lastSeen": "2026-10-18"
     },
     {
       "id": "1cd86100c27cf69b",
@@ -5889,6 +6007,22 @@
       "url": "https://www.nao.org.uk/insights/governments-approach-to-technology-suppliers-addressing-the-challenges/",
       "firstSeen": "2026-10-17",
       "lastSeen": "2026-10-17"
+    },
+    {
+      "id": "5ed6e485f54ddedb",
+      "title": "从现代化到使命驱动转型：政府技术投资怎样回到公共价值",
+      "kind": "深度分析",
+      "publishedRaw": "未识别",
+      "publishedDate": null,
+      "sourceName": "KPMG Global Tech Report 2026（政府与公共部门）",
+      "author": "未识别",
+      "coreView": "KPMG的政府与公共部门专题强调，技术投入应从“完成现代化项目”转向支撑机构使命与公共服务结果，同时补强数据整合、核心技术基础、跨部门协作、人才能力和安全韧性。其配套报告称调查覆盖全球115名政府领导者、管理者和技术决策者，并呈现出试点扩规模、数据孤岛与组织协作等挑战。",
+      "whyWorth": "它提供了从客户决策者视角重述技术方案的框架：不只列系统模块，而要说明其如何支撑机构职责、跨部门协同和可验证的服务/治理结果，并同时处理基础能力与落地阻力。",
+      "presalesUse": "档案信息化方案可先用客户使命和业务结果组织价值主张，再映射档案收集、归档、利用、共享与安全能力；用当前流程/数据证据验证痛点，约定可测的基线和验收指标，并把跨部门责任、人员培训、系统集成和持续运营写入实施路径。",
+      "evidenceLimit": "这是咨询机构自有研究，公开报告称样本为全球115名政府决策相关人士；公开页面未提供足以判断样本代表性的完整抽样信息。调查比例不能当作中国政府或档案行业基准，适合借鉴叙事和问题框架，不宜直接作为客户事实。",
+      "url": "https://kpmg.com/us/en/articles/2026/from-modernization-to-mission-driven-transformation.html",
+      "firstSeen": "2026-10-18",
+      "lastSeen": "2026-10-18"
     },
     {
       "id": "f0f75082c8b55ef4",
