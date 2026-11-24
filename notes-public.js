@@ -15,19 +15,19 @@ const size=8, metrics=['likes','favorites','comments','shares'];
 const total=n=>metrics.every(k=>Number.isFinite(n[k]))?metrics.reduce((v,k)=>v+n[k],0):null;
 function buttons(id,opts,selected,fn){const box=$(id);box.replaceChildren();for(const [k,v] of Object.entries(opts)){const b=document.createElement('button');b.type='button';b.textContent=v;b.disabled=busy;b.setAttribute('aria-pressed',String(k===selected));b.onclick=()=>fn(k);box.append(b)}}
 function configure(){
- buttons('sources',endpoint?{live:'实时检索',sample:'已收录笔记'}:{sample:'已收录笔记'},sourceMode,k=>{
+ buttons('sources',endpoint?{live:'笔记索引',sample:'历史样本'}:{sample:'历史样本'},sourceMode,k=>{
    sourceMode=k;message('');if(k==='live'){snapshot={source:'empty',items:[]};page=1}if(k==='sample'){snapshot=window.sample||{source:'sample',items:[]};$('query').value=snapshot.keyword||'';page=1}render()
  });
  $('times').parentElement.hidden=sourceMode==='sample';
- buttons('times',labels,mode,k=>{mode=k;configure()});buttons('types',types,type,k=>{type=k;page=1;render()})}
+ buttons('times',labels,mode,k=>{mode=k;configure();if(snapshot.source==='live' && $('query').value.trim())$('searchform').requestSubmit()});buttons('types',types,type,k=>{type=k;page=1;render()})}
 function message(s){$('message').textContent=s}
 function show(content){$('dialog-content').innerHTML=content;if(!$('dialog').open)$('dialog').showModal()}
 $('dialog').onclick=e=>{if(e.target===$('dialog'))$('dialog').close()};
 function render(){
  configure();const sort=$('sort').value;rows=snapshot.items.filter(x=>type==='all'||x.type===type).sort((a,b)=>sort==='date'?String(b.date||'').localeCompare(String(a.date||'')):(b[sort]??-1)-(a[sort]??-1));
- const historical=snapshot.source==='sample',sourceName=historical?'已收录笔记':snapshot.source==='live'?'实时检索':'等待检索';
+ const historical=snapshot.source==='sample',sourceName=historical?'历史样本':snapshot.source==='live'?'笔记索引':'等待检索';
  $('scope').textContent=rows.length?'仅统计当前筛选结果':'当前筛选结果';
- $('meta').textContent=snapshot.keyword?[sourceName,'「'+snapshot.keyword+'」',snapshot.window,snapshot.at].filter(Boolean).join('  ·  '):'输入关键词后查看结果';
+ $('meta').textContent=snapshot.keyword?[sourceName,'「'+snapshot.keyword+'」',snapshot.window,(snapshot.source==='live' && snapshot.at?'最近采集 ':'')+snapshot.at].filter(Boolean).join('  ·  '):'输入关键词后查看结果';
  $('count').textContent=rows.length+' 篇';
  const cards=[['匹配笔记','note',null,'#f12a49','#ffedf0'],['点赞总数','heart','likes','#ef507b','#fff0f4'],['收藏总数','bookmark','favorites','#ce911f','#fff5df'],['评论总数','comment','comments','#586ed0','#eef1ff'],['分享总数','share','shares','#329982','#e6f6f1']];
  $('stats').innerHTML=cards.map(([label,i,k,c,t])=>{const known=k?rows.map(x=>x[k]).filter(Number.isFinite):[];const n=k?(known.length?known.reduce((s,x)=>s+x,0):null):rows.length;return '<div class="stat" style="--t:'+t+';--c:'+c+'"><i>'+icon(i)+'</i><span class="label">'+label+'</span><strong>'+fmt(n)+'</strong>'+(k&&known.length&&known.length<rows.length?'<small>含已披露的 '+known.length+' 篇</small>':'')+'</div>'}).join('');
@@ -53,8 +53,19 @@ $('searchform').onsubmit=async e=>{e.preventDefault();const q=$('query').value.t
    const items=sample.items.filter(n=>tokens.every(t=>[sample.keyword,n.title,n.author,n.snippet].join(' ').toLocaleLowerCase().includes(t)));
    snapshot={...sample,keyword:q,items};page=1;message('');render();return;
  }
- busy=true;configure();$('search').disabled=true;$('search').textContent='检索中…';message('正在检索「'+q+'」…');
+ busy=true;configure();$('search').disabled=true;$('search').textContent='检索中…';message('正在查询本地索引…');
  try{
-   const result=await call('/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keyword:q,depth:mode})},195000);if(!Array.isArray(result.items))throw new Error('数据源返回格式异常');snapshot={...result,source:'live',keyword:q,window:labels[mode]};page=1;message('')}catch(err){message((err.name==='TypeError'?'在线检索服务暂时无法连接，请稍后重试。':err.name==='TimeoutError'?'数据源响应超时，请稍后重试。':err.message)+' 当前列表保留上次显示的结果。')}finally{busy=false;$('search').disabled=false;$('search').innerHTML=icon('search')+' 检索笔记';render()}};
-$('export').onclick=()=>{const header=['关键词','结果来源','采集时间','标题','作者','发布时间','点赞','收藏','评论','分享','总互动','预估阅读量','原文链接'];const values=rows.map(n=>[snapshot.keyword,snapshot.source==='sample'?'已收录笔记':'实时检索',snapshot.at,n.title,n.author,n.date,...metrics.map(k=>n[k]),total(n),n.reads,original(n.url)]);const cell=v=>{let s=String(v??'');if(/^[\s]*[=+@-]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"'};const blob=new Blob(['\uFEFF'+[header,...values].map(r=>r.map(cell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='笔记检索_'+snapshot.keyword+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+   const options={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keyword:q,depth:mode})};
+   let result=await call('/api/search',options,20000);
+   for(let attempt=0;attempt<24 && (result.pending || (!result.items?.length && result.missing_time && !result.retrying));attempt++){
+     message(result.pending?'首次收录此关键词，正在采集…':'正在从笔记详情核对发布时间…');
+     await new Promise(resolve=>setTimeout(resolve,2500));
+     result=await call('/api/search',options,20000);
+   }
+   if(!Array.isArray(result.items))throw new Error('数据源返回格式异常');
+   snapshot={...result,source:'live',keyword:q,window:labels[mode]};page=1;
+   message([result.pending?'首次采集已排队，请稍后查询。':'',result.retrying?'上次采集失败，系统将自动重试。':'',
+     result.missing_time?result.missing_time+' 篇待核实发布时间，暂未计入当前范围。':''].filter(Boolean).join(' '));
+}catch(err){message((err.name==='TypeError'?'在线检索服务暂时无法连接，请稍后重试。':err.name==='TimeoutError'?'数据源响应超时，请稍后重试。':err.message)+' 当前列表保留上次显示的结果。')}finally{busy=false;$('search').disabled=false;$('search').innerHTML=icon('search')+' 检索笔记';render()}};
+$('export').onclick=()=>{const header=['关键词','结果来源','采集时间','标题','作者','发布时间','点赞','收藏','评论','分享','总互动','预估阅读量','原文链接'];const values=rows.map(n=>[snapshot.keyword,snapshot.source==='sample'?'历史样本':'笔记索引',snapshot.at,n.title,n.author,n.date,...metrics.map(k=>n[k]),total(n),n.reads,original(n.url)]);const cell=v=>{let s=String(v??'');if(/^[\s]*[=+@-]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"'};const blob=new Blob(['\uFEFF'+[header,...values].map(r=>r.map(cell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='笔记检索_'+snapshot.keyword+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
 render();
