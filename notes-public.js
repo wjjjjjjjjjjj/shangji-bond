@@ -25,17 +25,18 @@ function show(content){$('dialog-content').innerHTML=content;if(!$('dialog').ope
 $('dialog').onclick=e=>{if(e.target===$('dialog'))$('dialog').close()};
 function render(){
  configure();const sort=$('sort').value;rows=snapshot.items.filter(x=>type==='all'||x.type===type).sort((a,b)=>sort==='date'?String(b.date||'').localeCompare(String(a.date||'')):(b[sort]??-1)-(a[sort]??-1));
+ const preparing=snapshot.source==='live' && !snapshot.at && (snapshot.pending || snapshot.retrying);
  const historical=snapshot.source==='sample',sourceName=historical?'历史样本':snapshot.source==='live'?'笔记索引':'等待检索';
  $('scope').textContent=rows.length?'仅统计当前筛选结果':'当前筛选结果';
  $('meta').textContent=snapshot.keyword?[sourceName,'「'+snapshot.keyword+'」',snapshot.window,(snapshot.source==='live' && snapshot.at?'最近采集 ':'')+snapshot.at].filter(Boolean).join('  ·  '):'输入关键词后查看结果';
- $('count').textContent=rows.length+' 篇';
+ $('count').textContent=preparing?'首次收录中':rows.length+' 篇';
  const cards=[['匹配笔记','note',null,'#f12a49','#ffedf0'],['点赞总数','heart','likes','#ef507b','#fff0f4'],['收藏总数','bookmark','favorites','#ce911f','#fff5df'],['评论总数','comment','comments','#586ed0','#eef1ff'],['分享总数','share','shares','#329982','#e6f6f1']];
- $('stats').innerHTML=cards.map(([label,i,k,c,t])=>{const known=k?rows.map(x=>x[k]).filter(Number.isFinite):[];const n=k?(known.length?known.reduce((s,x)=>s+x,0):null):rows.length;return '<div class="stat" style="--t:'+t+';--c:'+c+'"><i>'+icon(i)+'</i><span class="label">'+label+'</span><strong>'+fmt(n)+'</strong>'+(k&&known.length&&known.length<rows.length?'<small>含已披露的 '+known.length+' 篇</small>':'')+'</div>'}).join('');
+ $('stats').innerHTML=cards.map(([label,i,k,c,t])=>{const known=k?rows.map(x=>x[k]).filter(Number.isFinite):[];const n=k?(known.length?known.reduce((s,x)=>s+x,0):null):rows.length;return '<div class="stat" style="--t:'+t+';--c:'+c+'"><i>'+icon(i)+'</i><span class="label">'+label+'</span><strong>'+(preparing?'—':fmt(n))+'</strong>'+(k&&known.length&&known.length<rows.length?'<small>含已披露的 '+known.length+' 篇</small>':'')+'</div>'}).join('');
  const pages=Math.max(1,Math.ceil(rows.length/size));page=Math.min(page,pages);const offset=(page-1)*size;
  $('rows').innerHTML=rows.slice(offset,offset+size).map((n,idx)=>{const img=cover(n.cover),url=original(n.url);return '<tr><td><button class="note" data-row="'+(offset+idx)+'">'+(img?'<img class="thumb" src="'+esc(img)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'<span class="thumb">'+icon('note')+'</span>')+'<span><strong>'+esc(n.title)+'</strong><small>'+esc(n.author||'作者未返回')+'</small></span></button></td><td class="date">'+esc(n.date||'—')+'</td>'+metrics.map(k=>'<td class="'+(k==='likes'?'likes':'')+'">'+fmt(n[k])+'</td>').join('')+'<td>'+fmt(total(n))+'</td><td>'+(url?'<a class="orig" aria-label="查看小红书原文" target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">'+icon('link')+'</a>':'—')+'</td></tr>'}).join('');
  for(const b of $('rows').querySelectorAll('[data-row]'))b.onclick=()=>detail(rows[Number(b.dataset.row)]);
- $('empty').hidden=!!rows.length;$('empty').textContent=snapshot.items.length?'当前类型下没有可确认的笔记。':snapshot.source==='empty'?'请输入关键词并开始检索。':'本次检索未返回匹配笔记。';
- $('pagination').textContent=rows.length?'显示 '+(offset+1)+'–'+Math.min(offset+size,rows.length)+' 篇，共 '+rows.length+' 篇':'共 0 篇';$('page').textContent=page;$('prev').disabled=page===1;$('next').disabled=page===pages;$('export').disabled=!rows.length;
+ $('empty').hidden=preparing||!!rows.length;$('empty').textContent=snapshot.items.length?'当前类型下没有可确认的笔记。':snapshot.source==='empty'?'请输入关键词并开始检索。':'本次检索未返回匹配笔记。';
+ $('pagination').textContent=rows.length?'显示 '+(offset+1)+'–'+Math.min(offset+size,rows.length)+' 篇，共 '+rows.length+' 篇':(preparing?'':'共 0 篇');$('page').textContent=page;$('prev').disabled=page===1;$('next').disabled=page===pages;$('export').disabled=!rows.length;
 }
 function detail(n){const url=original(n.url);show('<h2>'+esc(n.title)+'</h2><p>'+esc(n.author||'作者未返回')+' · '+esc(n.date||'时间未返回')+'</p><p>'+esc(n.snippet||'')+'</p><dl>'+[['笔记类型',types[n.type]||'未返回'],['点赞',fmt(n.likes)],['收藏',fmt(n.favorites)],['评论',fmt(n.comments)],['分享',fmt(n.shares)],['预估阅读量',fmt(n.reads)],['总互动量',fmt(total(n))]].map(([k,v])=>'<dt>'+k+'</dt><dd>'+v+'</dd>').join('')+'</dl><p>四项互动数据齐全时计算总互动量。</p>'+(url?'<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">查看小红书原文 ↗</a>':''))}
 $('prev').onclick=()=>{page--;render()};$('next').onclick=()=>{page++;render()};$('sort').onchange=()=>{page=1;render()};$('clear').onclick=()=>{$('query').value='';$('query').focus()};
@@ -57,15 +58,16 @@ $('searchform').onsubmit=async e=>{e.preventDefault();const q=$('query').value.t
  try{
    const options={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keyword:q,depth:mode})};
    let result=await call('/api/search',options,20000);
-   for(let attempt=0;attempt<24 && (result.pending || (!result.items?.length && result.missing_time && !result.retrying));attempt++){
-     message(result.pending?'首次收录此关键词，正在采集…':'正在从笔记详情核对发布时间…');
+   for(let attempt=0;attempt<24 && result.pending;attempt++){
+     message('正在收录此关键词，完成后显示结果…');
      await new Promise(resolve=>setTimeout(resolve,2500));
      result=await call('/api/search',options,20000);
    }
    if(!Array.isArray(result.items))throw new Error('数据源返回格式异常');
    snapshot={...result,source:'live',keyword:q,window:labels[mode]};page=1;
-   message([result.pending?'首次采集已排队，请稍后查询。':'',result.retrying?'上次采集失败，系统将自动重试。':'',
-     result.missing_time?result.missing_time+' 篇待核实发布时间，暂未计入当前范围。':''].filter(Boolean).join(' '));
+   message(result.retrying?'数据源暂时未响应，系统将自动重试。':
+     result.pending?'后台正在完成首次收录，请稍后查询。':'');
+
 }catch(err){message((err.name==='TypeError'?'在线检索服务暂时无法连接，请稍后重试。':err.name==='TimeoutError'?'数据源响应超时，请稍后重试。':err.message)+' 当前列表保留上次显示的结果。')}finally{busy=false;$('search').disabled=false;$('search').innerHTML=icon('search')+' 检索笔记';render()}};
 $('export').onclick=()=>{const header=['关键词','结果来源','采集时间','标题','作者','发布时间','点赞','收藏','评论','分享','总互动','预估阅读量','原文链接'];const values=rows.map(n=>[snapshot.keyword,snapshot.source==='sample'?'历史样本':'笔记索引',snapshot.at,n.title,n.author,n.date,...metrics.map(k=>n[k]),total(n),n.reads,original(n.url)]);const cell=v=>{let s=String(v??'');if(/^[\s]*[=+@-]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"'};const blob=new Blob(['\uFEFF'+[header,...values].map(r=>r.map(cell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='笔记检索_'+snapshot.keyword+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
 render();
