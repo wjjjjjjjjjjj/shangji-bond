@@ -1,94 +1,56 @@
-const $ = (id) => document.getElementById(id);
-const escape = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const safeLink = value => {try {const u=new URL(value); return ['https:', 'http:'].includes(u.protocol) && !u.username && !u.password ? u.href : ''; } catch {return '';}};
-let data = null, category = '', moduleMode = 'sales', page = 1, lastTrigger = null;
-const pageSize = 12;
-const today = () => new Intl.DateTimeFormat('sv-SE', {timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-const daysBetween = (a,b) => (Date.parse(a+'T00:00:00+08:00')-Date.parse(b+'T00:00:00+08:00'))/86400000;
-const tagClass = t => ({'采购意向':'intent','采购需求':'demand','更正公告':'change'}[t] || '');
-function budget(r) {if(r.budgetYuan === null) return `<span class="budget-amount unknown">${r.budgetRaw === '未识别' ? '预算未识别' : '详见预算原文'}</span>`; const n=r.budgetYuan/10000; return `<span class="budget-amount">${new Intl.NumberFormat('zh-CN',{maximumFractionDigits:2}).format(n)}<small>万元</small></span>`;}
-function deadline(r) {if(!r.deadlineDate) return `截止时间未识别${r.autoClearDate?`<span class="deadline-note due">自动清除日 ${escape(r.autoClearDate)}</span>`:''}`; const d=daysBetween(r.deadlineDate,today()); return `${escape(r.deadlineDate)}${d<0?'<span class="deadline-note">已过截止日期</span>':d===0?'<span class="deadline-note due">截止日为今天</span>':d<=7?`<span class="deadline-note due">${d} 天后截止</span>`:''}`;}
-function selectedRecords(){
-  const query=$('query').value.trim().toLocaleLowerCase(); const province=$('province').value, method=$('method').value, b=$('budget').value, period=Number($('period').value);
-  return data.records.filter(r=>{
-    if(category && r.type!==category)return false;
-    if(query && ![r.title,r.projectName,r.customer,r.summary,r.province].join(' ').toLocaleLowerCase().includes(query))return false;
-    if(province && r.province!==province)return false;
-    if(method && r.method!==method)return false;
-    if($('high').checked && r.relevance!=='高相关')return false;
-    if(r.publishedDate && r.publishedDate>today())return false;
-    if((r.deadlineDate && r.deadlineDate<today()) || (r.autoClearDate && r.autoClearDate<today()))return false;
-    if(period && (!r.publishedDate || daysBetween(today(),r.publishedDate)<0 || daysBetween(today(),r.publishedDate)>=period))return false;
-    const n=r.budgetYuan;
-    if(b==='unknown' && n!==null)return false;
-    if(b && b!=='unknown' && n===null)return false;
-    if(b==='under50' && n>=500000)return false;
-    if(b==='50to100' && (n<500000||n>=1000000))return false;
-    if(b==='100to500' && (n<1000000||n>=5000000))return false;
-    if(b==='over500' && n<5000000)return false;
-    return true;
-  }).sort((a,b)=>$('sort').value==='budget' ? (b.budgetYuan??-1)-(a.budgetYuan??-1) : $('sort').value==='deadline' ? (a.deadlineDate||'9999').localeCompare(b.deadlineDate||'9999') : (b.publishedDate||'').localeCompare(a.publishedDate||''));
-}
-function selectedInsights(){
-  const query=$('query').value.trim().toLocaleLowerCase();
-  return (data.insights||[]).filter(item=>!query||[item.title,item.sourceName,item.author,item.coreView,item.whyWorth,item.presalesUse,item.evidenceLimit].join(' ').toLocaleLowerCase().includes(query))
-    .sort((a,b)=>(b.publishedDate||'').localeCompare(a.publishedDate||''));
-}
+'use strict';
+const $=id=>document.getElementById(id);
+const paths={layers:'M12 3 3 8l9 5 9-5-9-5Zm-9 10 9 5 9-5M3 17l9 5 9-5',down:'m7 10 5 5 5-5',search:'M16 16l5 5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',scan:'M3 8V4h5m8 0h5v4m0 8v4h-5M8 20H3v-4m11-3 3 3m-2-6a4 4 0 1 1-8 0 4 4 0 0 1 8 0',download:'M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4',note:'M6 3h12a1 1 0 0 1 1 1v16H5V4a1 1 0 0 1 1-1Zm2 5h8m-8 4h8m-8 4h5',heart:'M20 5a5 5 0 0 0-8 1 5 5 0 0 0-8-1c-5 5 2 11 8 15 6-4 13-10 8-15Z',bookmark:'M6 3h12v18l-6-4-6 4V3Z',comment:'M21 11a9 9 0 0 1-9 9 12 12 0 0 1-4-1l-5 2 1-5a9 9 0 1 1 17-5Z',share:'m13 3 8 7-8 7v-4c-5 0-8 2-10 6 0-7 3-11 10-12V3Z',link:'M13 4h7v7m-9 2 9-9M10 6H5v14h14v-5'};
+const icon=k=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+paths[k]+'"/></svg>';
+for(const el of document.querySelectorAll('[data-icon]'))el.innerHTML=icon(el.dataset.icon);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>Number.isFinite(n)?n.toLocaleString('zh-CN'):'—';
+function original(raw){try{const u=new URL(raw);return u.protocol==='https:'&&u.hostname==='www.xiaohongshu.com'?u.href:''}catch{return ''}}
+function cover(raw){if(window.embeddedCovers && Object.hasOwn(window.embeddedCovers,raw))return window.embeddedCovers[raw];if(/^covers\/\d+\.jpg$/.test(raw))return raw;try{const u=new URL(raw);if(/\.xhscdn\.com$/.test(u.hostname)&&['http:','https:'].includes(u.protocol)){u.protocol='https:';return u.href}}catch{}return ''}
+const labels={quick:'近24小时',default:'近7天',deep:'近半年'},types={all:'全部',normal:'图文笔记',video:'视频笔记'};
+let sourceMode=location.protocol==='file:'?'sample':'live';
+let mode='quick',type='all',page=1,snapshot=window.sample||{keyword:'',source:'empty',items:[]},rows=[],busy=false;
+const size=8, metrics=['likes','favorites','comments','shares'];
+const total=n=>metrics.every(k=>Number.isFinite(n[k]))?metrics.reduce((v,k)=>v+n[k],0):null;
+function buttons(id,opts,selected,fn){const box=$(id);box.replaceChildren();for(const [k,v] of Object.entries(opts)){const b=document.createElement('button');b.type='button';b.textContent=v;b.disabled=busy;b.setAttribute('aria-pressed',String(k===selected));b.onclick=()=>fn(k);box.append(b)}}
+function configure(){
+ buttons('sources',{live:'实时检索',sample:'历史样本'},sourceMode,k=>{
+   sourceMode=k;message('');if(k==='sample'){snapshot=window.sample||{source:'sample',items:[]};$('query').value=snapshot.keyword||'';page=1}render()
+ });
+ $('times').parentElement.hidden=sourceMode==='sample';
+ buttons('times',labels,mode,k=>{mode=k;configure()});buttons('types',types,type,k=>{type=k;page=1;render()})}
+function message(s){$('message').textContent=s}
+function show(content){$('dialog-content').innerHTML=content;if(!$('dialog').open)$('dialog').showModal()}
+$('dialog').onclick=e=>{if(e.target===$('dialog'))$('dialog').close()};
 function render(){
-  if(!data)return;
-  const isInsight=moduleMode==='presales'; $('workspace').classList.toggle('presales-mode',isInsight);
-  $('query').placeholder=isInsight?'搜索售前方法、价值表达或落地风险':'搜索项目、采购人或关键词，例如：电子档案';
-  const rows=isInsight?selectedInsights():selectedRecords(),pages=Math.max(1,Math.ceil(rows.length/pageSize)); page=Math.min(page,pages);
-  $('result-count').innerHTML=isInsight?`共 <strong>${rows.length}</strong> 篇售前信息`:`共 <strong>${rows.length}</strong> 条公告${category?' · '+escape(category):''}`;
-  $('cards').innerHTML=rows.slice((page-1)*pageSize,page*pageSize).map(r=>isInsight?`<article class="insight-card"><div class="insight-meta"><span class="tag insight-tag">${escape(r.kind)}</span><span>${escape(r.publishedDate||r.publishedRaw||'发布日期未识别')}</span><span>${escape(r.sourceName)}</span></div><h2>${escape(r.title)}</h2><section><h3>核心观点</h3><p>${escape(r.coreView)}</p></section><section><h3>为什么值得关注</h3><p>${escape(r.whyWorth)}</p></section><section class="presales-takeaway"><h3>可用于售前工作的启发</h3><p>${escape(r.presalesUse)}</p></section><p class="insight-boundary"><strong>证据与适用边界：</strong>${escape(r.evidenceLimit)}</p><div class="card-footer"><span class="source-link">${escape(r.sourceName)}</span><a class="details-button insight-source" href="${escape(safeLink(r.url))}" target="_blank" rel="noopener noreferrer">阅读原文 <span aria-hidden="true">↗</span></a></div></article>`:`<article class="card"><div class="card-top"><span class="tag ${tagClass(r.type)}">${escape(r.type)}</span><span class="location">${escape(r.province==='未识别'?'地区未识别':r.province)}</span>${r.relevance==='高相关'?'<span class="relevance">高相关</span>':''}</div><h2 class="card-title"><button data-detail="${r.id}" title="${escape(r.title)}">${escape(r.projectName)}</button></h2><div class="budget-row">${budget(r)}<span class="budget-caption">${r.type==='采购意向'?'意向预算':'项目预算'}</span></div><dl class="card-info"><dt>采购人</dt><dd class="customer" title="${escape(r.customer)}">${escape(r.customer==='未识别'?'采购人未识别':r.customer)}</dd><dt>发布时间</dt><dd>${escape(r.publishedDate||r.publishedRaw)}</dd><dt>投标截止</dt><dd>${deadline(r)}</dd></dl>${r.verification==='详情待核验'?'<p class="quality-note">详情待核验 · 采集时详情页未能读取</p>':''}<div class="card-footer"><a class="source-link" href="${escape(safeLink(r.url))}" target="_blank" rel="noopener noreferrer" title="查看${escape(r.source)}公告原文">${escape(r.source)} ↗</a><button class="details-button" data-detail="${r.id}">查看详情 <span aria-hidden="true">→</span></button></div></article>`).join('');
-  $('cards').setAttribute('aria-busy','false'); $('empty').hidden=rows.length>0; $('pagination').hidden=pages<2;
-  $('page-info').textContent=`${page} / ${pages}`; $('prev').disabled=page===1; $('next').disabled=page===pages;
+ configure();const sort=$('sort').value;rows=snapshot.items.filter(x=>type==='all'||x.type===type).sort((a,b)=>sort==='date'?String(b.date||'').localeCompare(String(a.date||'')):(b[sort]??-1)-(a[sort]??-1));
+ const historical=snapshot.source==='sample',sourceName=historical?'历史样本':snapshot.source==='live'?'实时检索':'等待检索';
+ $('scope').textContent=rows.length?'仅统计当前筛选结果':'当前筛选结果';
+ $('meta').textContent=snapshot.keyword?[sourceName,'「'+snapshot.keyword+'」',snapshot.window,snapshot.at].filter(Boolean).join('  ·  '):'输入关键词后查看结果';
+ $('count').textContent=rows.length+' 篇';
+ const cards=[['匹配笔记','note',null,'#f12a49','#ffedf0'],['点赞总数','heart','likes','#ef507b','#fff0f4'],['收藏总数','bookmark','favorites','#ce911f','#fff5df'],['评论总数','comment','comments','#586ed0','#eef1ff'],['分享总数','share','shares','#329982','#e6f6f1']];
+ $('stats').innerHTML=cards.map(([label,i,k,c,t])=>{const known=k?rows.map(x=>x[k]).filter(Number.isFinite):[];const n=k?(known.length?known.reduce((s,x)=>s+x,0):null):rows.length;return '<div class="stat" style="--t:'+t+';--c:'+c+'"><i>'+icon(i)+'</i><span class="label">'+label+'</span><strong>'+fmt(n)+'</strong>'+(k&&known.length&&known.length<rows.length?'<small>含已披露的 '+known.length+' 篇</small>':'')+'</div>'}).join('');
+ const pages=Math.max(1,Math.ceil(rows.length/size));page=Math.min(page,pages);const offset=(page-1)*size;
+ $('rows').innerHTML=rows.slice(offset,offset+size).map((n,idx)=>{const img=cover(n.cover),url=original(n.url);return '<tr><td><button class="note" data-row="'+(offset+idx)+'">'+(img?'<img class="thumb" src="'+esc(img)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'<span class="thumb">'+icon('note')+'</span>')+'<span><strong>'+esc(n.title)+'</strong><small>'+esc(n.author||'作者未返回')+'</small></span></button></td><td class="date">'+esc(n.date||'—')+'</td>'+metrics.map(k=>'<td class="'+(k==='likes'?'likes':'')+'">'+fmt(n[k])+'</td>').join('')+'<td>'+fmt(total(n))+'</td><td>'+(url?'<a class="orig" aria-label="查看小红书原文" target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">'+icon('link')+'</a>':'—')+'</td></tr>'}).join('');
+ for(const b of $('rows').querySelectorAll('[data-row]'))b.onclick=()=>detail(rows[Number(b.dataset.row)]);
+ $('empty').hidden=!!rows.length;$('empty').textContent=snapshot.items.length?'当前类型下没有可确认的笔记。':snapshot.source==='live'?'本次检索未返回笔记。':'请输入关键词并开始检索。';
+ $('pagination').textContent=rows.length?'显示 '+(offset+1)+'–'+Math.min(offset+size,rows.length)+' 篇，共 '+rows.length+' 篇':'共 0 篇';$('page').textContent=page;$('prev').disabled=page===1;$('next').disabled=page===pages;$('export').disabled=!rows.length;
 }
-function showDetail(id, trigger){
-  const r=data.records.find(x=>x.id===id); if(!r)return; lastTrigger=trigger;
-  const pairs=[['省份',r.province],['客户 / 采购人',r.customer],['项目名称',r.projectName],['采购方式',r.methodRaw],['预算金额（原文）',r.budgetRaw],['公告发布日期',r.publishedRaw],['报名 / 获取文件',r.acquisitionTime],['投标截止时间',r.deadlineRaw],['自动清除日期',r.autoClearDate||'不适用'],['招标网站',r.source],['招标文件',r.documents.length?`已收录 ${r.documents.length} 个公开文件链接`:r.documentNote||'未提供公开文件'],['收录情况',`${r.firstSeen} 首次收录 · ${r.lastSeen} 最近收录`]];
-  $('detail-body').innerHTML=`<span class="tag ${tagClass(r.type)}">${escape(r.type)}</span><h2 id="detail-title">${escape(r.title)}</h2><dl class="detail-grid">${pairs.map(([k,v])=>`<dt>${escape(k)}</dt><dd>${escape(v)}</dd>`).join('')}</dl><div class="detail-summary"><h3>公告摘要</h3><p>${escape(r.summary)}</p></div><div class="dialog-actions"><a class="primary" href="${escape(safeLink(r.url))}" target="_blank" rel="noopener noreferrer">查看公告原文 ↗</a>${r.documents.map(d=>`<a class="secondary" href="${escape(safeLink(d.url))}" target="_blank" rel="noopener noreferrer">${escape(d.label)} ↗</a>`).join('')}</div><p class="detail-caution">${r.verification==='详情待核验'?'采集时未能读取详情页，字段需人工核验。':'本页整理自公开采购日报，未对原文作实时复核。'}缺失字段以“未识别”保留；采购安排可能变更，请以采购方最新公告为准。</p>`;
-  $('detail').showModal();
-}
-function reset(){category='';page=1;for(const id of ['query','province','method','budget','period'])$(id).value='';$('high').checked=false;$('sort').value='newest';updateTabs();render();}
-function updateTabs(){document.querySelectorAll('[data-type]').forEach(b=>{const active=b.dataset.type===category;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});}
-function updateModuleNav(){document.querySelectorAll('[data-module]').forEach(button=>{const active=button.dataset.module===moduleMode;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});}
-function switchModule(mode){if(!['sales','presales'].includes(mode))return;moduleMode=mode;category='';page=1;for(const id of ['query','province','method','budget','period'])$(id).value='';$('high').checked=false;$('sort').value='newest';updateTabs();updateModuleNav();render();}
-async function load(){
-  $('error').hidden=true;$('cards').setAttribute('aria-busy','true');$('result-count').textContent='正在加载采购信息…';
-  try {
-    const response=await fetch('./data.json',{cache:'no-store'});if(!response.ok)throw new Error('Data unavailable');const next=await response.json();if(next.schemaVersion!==1||!Array.isArray(next.records))throw new Error('Invalid data');if(!Array.isArray(next.insights))next.insights=[];data=next;
-    $('updated').textContent=data.latestReportAt||'暂无日报';$('all-count').textContent=data.records.length;
-    $('insight-count').textContent=data.insights.length;
-    $('coverage').textContent=`已整理 ${data.reportCount} 份日报 · ${data.records.length} 条公告 · ${data.insights.length} 篇售前研究`;
-    for(const [id,key,label] of [['province','province','全国地区'],['method','method','全部方式']]){const values=[...new Set(data.records.map(r=>r[key]))].sort((a,b)=>a==='未识别'?1:b==='未识别'?-1:a.localeCompare(b,'zh'));$(id).innerHTML=`<option value="">${label}</option>`+values.map(v=>`<option value="${escape(v)}">${escape(v)}</option>`).join('');}
-    const stale=!data.latestReportAt||daysBetween(today(),data.latestReportAt.slice(0,10))>1;
-    $('freshness').hidden=!stale;$('freshness').textContent=`最近收录的日报为 ${data.latestReportAt||'未知时间'}。近期数据尚未更新，以下为历史记录；这不代表近期没有新公告。`;
-    render();
-  }catch{$('error').hidden=false;$('empty').hidden=true;$('pagination').hidden=true;$('cards').innerHTML='';$('cards').setAttribute('aria-busy','false');$('result-count').textContent='加载未完成';$('updated').textContent='数据暂不可用';}
-}
-$('search-form').addEventListener('submit',e=>{e.preventDefault();page=1;render();});
-$('query').addEventListener('input',()=>{page=1;render();});
-for(const id of ['province','method','budget','period','high','sort'])$(id).addEventListener('change',()=>{page=1;render();});
-document.querySelectorAll('[data-type]').forEach(b=>b.addEventListener('click',()=>{category=b.dataset.type;page=1;updateTabs();render();}));
-document.querySelectorAll('[data-module]').forEach(b=>b.addEventListener('click',()=>switchModule(b.dataset.module)));
-for(const id of ['reset','clear-empty'])$(id).addEventListener('click',reset);
-$('cards').addEventListener('click',e=>{const b=e.target.closest('[data-detail]');if(b)showDetail(b.dataset.detail,b);});
-$('close-detail').addEventListener('click',()=>$('detail').close());
-$('detail').addEventListener('click',e=>{if(e.target===$('detail')){const r=$('detail').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('detail').close();}});
-$('detail').addEventListener('close',()=>lastTrigger?.focus());
-for(const [id,step] of [['prev',-1],['next',1]])$(id).addEventListener('click',()=>{page+=step;render();document.querySelector('.tabs').scrollIntoView({block:'start'});});
-$('retry').addEventListener('click',load);
-// Optional agent interface; browsing and filtering also work in ordinary browsers.
-if(document.modelContext?.registerTool){
-  const lifecycle=new AbortController();
-  const tool={name:'filter_archive_notices',title:'筛选档案采购与售前信息',description:'更新关键词和信息分类筛选，返回匹配数量及前 12 条采购公告或售前研究。',inputSchema:{type:'object',properties:{query:{type:'string',maxLength:200},type:{type:'string',enum:['','采购公告','采购意向','采购需求','更正公告','售前信息']}},additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:true},execute(input){
-    if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(k=>!['query','type'].includes(k))||(input.query!==undefined&&(typeof input.query!=='string'||input.query.length>200))||(input.type!==undefined&&!['','采购公告','采购意向','采购需求','更正公告','售前信息'].includes(input.type)))throw new Error('筛选参数无效');
-    if(!data)throw new Error('采购信息尚未加载');
-    switchModule(input.type==='售前信息'?'presales':'sales');$('query').value=input.query||'';category=moduleMode==='sales'?(input.type||''):'';updateTabs();render();const rows=moduleMode==='presales'?selectedInsights():selectedRecords();
-    return moduleMode==='presales'?{count:rows.length,insights:rows.slice(0,12).map(r=>({id:r.id,title:r.title,kind:r.kind,sourceName:r.sourceName,url:r.url}))}:{count:rows.length,notices:rows.slice(0,12).map(r=>({id:r.id,title:r.title,type:r.type,province:r.province,url:r.url}))};
-  }};
-  try{Promise.resolve(document.modelContext.registerTool(tool,{signal:lifecycle.signal})).catch(()=>{});}catch{}
-  window.addEventListener('pagehide',()=>lifecycle.abort(),{once:true});
-}
-load();
+function detail(n){const url=original(n.url);show('<h2>'+esc(n.title)+'</h2><p>'+esc(n.author||'作者未返回')+' · '+esc(n.date||'时间未返回')+'</p><p>'+esc(n.snippet||'')+'</p><dl>'+[['笔记类型',types[n.type]||'未返回'],['点赞',fmt(n.likes)],['收藏',fmt(n.favorites)],['评论',fmt(n.comments)],['分享',fmt(n.shares)],['预估阅读量',fmt(n.reads)],['总互动量',fmt(total(n))]].map(([k,v])=>'<dt>'+k+'</dt><dd>'+v+'</dd>').join('')+'</dl><p>四项互动数据齐全时计算总互动量。</p>'+(url?'<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">查看小红书原文 ↗</a>':''))}
+$('prev').onclick=()=>{page--;render()};$('next').onclick=()=>{page++;render()};$('sort').onchange=()=>{page=1;render()};$('clear').onclick=()=>{$('query').value='';$('query').focus()};
+const localOrigin='http://127.0.0.1:18731';
+function localApi(path){return ['http://localhost:18731',localOrigin].includes(location.origin)?location.origin+path:localOrigin+path}
+async function call(path,options={},ms=120000){const response=await fetch(localApi(path),{...options,signal:AbortSignal.timeout(ms),cache:'no-store'});const result=await response.json();if(!response.ok)throw new Error(result.error||'数据源暂时无法返回结果');return result}
+function connection(){show('<h2>数据源连接</h2><p>实时查询使用本机已安装的 last30days 小红书数据源。解压启动包，双击「启动笔记检索.cmd」，再检查连接。</p><p>本机服务地址 <code>'+localOrigin+'</code></p><button class="test" id="test">检查连接</button><p id="health" role="status"></p>');$('test').onclick=async()=>{$('test').disabled=true;$('health').textContent='正在检查登录状态…';try{const r=await call('/api/status',{},20000);$('health').textContent=r.message;$('connection').classList.toggle('online',r.ready)}catch(err){$('health').textContent=err.name==='TypeError'?'无法访问本机服务，请确认启动窗口已打开，并允许浏览器访问本地网络。':err.message}finally{$('test').disabled=false}}}
+$('connection').onclick=connection;
+$('searchform').onsubmit=async e=>{e.preventDefault();const q=$('query').value.trim();if(!q||busy)return;
+ if(sourceMode==='sample'){
+   const sample=window.sample||{keyword:'',items:[],source:'sample'};
+   const tokens=q.toLocaleLowerCase().split(/\s+/).filter(Boolean);
+   const items=sample.items.filter(n=>tokens.every(t=>[sample.keyword,n.title,n.author,n.snippet].join(' ').toLocaleLowerCase().includes(t)));
+   snapshot={...sample,keyword:q,items};page=1;message('');render();return;
+ }
+ if(location.protocol==='file:'){message('实时检索请双击启动包中的「启动笔记检索.cmd」，在自动打开的本机页面中查询。');return}
+ busy=true;configure();$('search').disabled=true;$('search').textContent='检索中…';message('正在通过 last30days 检索「'+q+'」…');try{const result=await call('/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keyword:q,depth:mode})},195000);if(!Array.isArray(result.items))throw new Error('数据源返回格式异常');snapshot={...result,source:'live',keyword:q,window:labels[mode]};page=1;$('connection').classList.add('online');message('')}catch(err){$('connection').classList.remove('online');message((err.name==='TypeError'?'无法连接本机 last30days，请点击右上角「数据源」检查连接。':err.name==='TimeoutError'?'数据源响应超时，请稍后重试。':err.message)+' 当前列表保留上次显示的结果。')}finally{busy=false;$('search').disabled=false;$('search').innerHTML=icon('search')+' 检索笔记';render()}};
+$('export').onclick=()=>{const header=['关键词','结果来源','采集时间','标题','作者','发布时间','点赞','收藏','评论','分享','总互动','预估阅读量','原文链接'];const values=rows.map(n=>[snapshot.keyword,snapshot.source==='sample'?'历史样本':'last30days',snapshot.at,n.title,n.author,n.date,...metrics.map(k=>n[k]),total(n),n.reads,original(n.url)]);const cell=v=>{let s=String(v??'');if(/^[\s]*[=+@-]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"'};const blob=new Blob(['\uFEFF'+[header,...values].map(r=>r.map(cell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='笔记检索_'+snapshot.keyword+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+render();
