@@ -15,15 +15,26 @@ const size=8, metrics=['likes','favorites','comments','shares'];
 const total=n=>metrics.every(k=>Number.isFinite(n[k]))?metrics.reduce((v,k)=>v+n[k],0):null;
 function buttons(id,opts,selected,fn){const box=$(id);box.replaceChildren();for(const [k,v] of Object.entries(opts)){const b=document.createElement('button');b.type='button';b.textContent=v;b.disabled=busy;b.setAttribute('aria-pressed',String(k===selected));b.onclick=()=>fn(k);box.append(b)}}
 function configure(){
- buttons('sources',endpoint?{live:'笔记索引',sample:'历史样本'}:{sample:'历史样本'},sourceMode,k=>{
+ buttons('sources',endpoint?{live:'公开笔记索引',sample:'历史样本'}:{sample:'历史样本'},sourceMode,k=>{
    sourceMode=k;message('');if(k==='live'){snapshot={source:'empty',items:[]};page=1}if(k==='sample'){snapshot=window.sample||{source:'sample',items:[]};$('query').value=snapshot.keyword||'';page=1}render()
  });
  $('times').parentElement.hidden=sourceMode==='sample';
  buttons('times',labels,mode,k=>{mode=k;configure();if(snapshot.source==='live' && $('query').value.trim())$('searchform').requestSubmit()});buttons('types',types,type,k=>{type=k;page=1;render()})}
+function renderLeads(){
+ let box=document.getElementById('public-leads');
+ if(!box){box=document.createElement('details');box.id='public-leads';$('message').after(box)}
+ box.replaceChildren();
+ const links=(snapshot.source==='live' && snapshot.leads || []).filter(n=>original(n.url));
+ box.hidden=!links.length;
+ if(!links.length)return;
+ const heading=document.createElement('summary');heading.textContent='公开搜索链接（'+links.length+' 条，未计入发布时间筛选）';box.append(heading);
+ for(const n of links){const p=document.createElement('p'),a=document.createElement('a');a.href=original(n.url);a.target='_blank';a.rel='noopener noreferrer';a.textContent=n.title;p.append(a);box.append(p)}
+}
 function message(s){$('message').textContent=s}
 function show(content){$('dialog-content').innerHTML=content;if(!$('dialog').open)$('dialog').showModal()}
 $('dialog').onclick=e=>{if(e.target===$('dialog'))$('dialog').close()};
 function render(){
+ renderLeads();
  configure();const sort=$('sort').value;rows=snapshot.items.filter(x=>type==='all'||x.type===type).sort((a,b)=>sort==='date'?String(b.date||'').localeCompare(String(a.date||'')):(b[sort]??-1)-(a[sort]??-1));
  const preparing=snapshot.source==='live' && !snapshot.at && (snapshot.pending || snapshot.retrying);
  const historical=snapshot.source==='sample',sourceName=historical?'历史样本':snapshot.source==='live'?'笔记索引':'等待检索';
@@ -54,14 +65,14 @@ $('searchform').onsubmit=async e=>{e.preventDefault();const q=$('query').value.t
    const items=sample.items.filter(n=>tokens.every(t=>[sample.keyword,n.title,n.author,n.snippet].join(' ').toLocaleLowerCase().includes(t)));
    snapshot={...sample,keyword:q,items};page=1;message('');render();return;
  }
- busy=true;configure();$('search').disabled=true;$('search').textContent='检索中…';message('正在查询本地索引…');
+ busy=true;configure();$('search').disabled=true;$('search').textContent='检索中…';message('正在查询公开笔记索引…');
  try{
    const options={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keyword:q,depth:mode})};
-   let result=await call('/api/search',options,20000);
+   let result=await call('/api/public-search',options,20000);
    for(let attempt=0;attempt<24 && result.pending;attempt++){
      message('正在收录此关键词，完成后显示结果…');
      await new Promise(resolve=>setTimeout(resolve,2500));
-     result=await call('/api/search',options,20000);
+     result=await call('/api/public-search',options,20000);
    }
    if(!Array.isArray(result.items))throw new Error('数据源返回格式异常');
    snapshot={...result,source:'live',keyword:q,window:labels[mode]};page=1;
